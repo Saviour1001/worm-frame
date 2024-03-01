@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-
 import {WormFrame} from "../src/Worm-frame.sol";
 
 import "wormhole-solidity-sdk/testing/WormholeRelayerTest.sol";
@@ -10,59 +9,144 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 contract WormFrameTest is WormholeRelayerBasicTest {
-    WormFrame public helloSource;
-    WormFrame public helloTarget;
+    WormFrame public frameSource;
+    WormFrame public frameTarget;
 
     ERC20Mock public token;
 
     function setUpSource() public override {
-        helloSource = new WormFrame(
-            address(relayerSource),
-            address(tokenBridgeSource),
-            address(wormholeSource)
-        );
+        frameSource = new WormFrame(address(relayerSource), address(tokenBridgeSource), address(wormholeSource));
 
         token = createAndAttestToken(sourceChain);
     }
 
     function setUpTarget() public override {
-        helloTarget = new WormFrame(
-            address(relayerTarget),
-            address(tokenBridgeTarget),
-            address(wormholeTarget)
-        );
+        frameTarget = new WormFrame(address(relayerTarget), address(tokenBridgeTarget), address(wormholeTarget));
     }
 
-    function testRemoteNativeDeposit() public {
+    function testGetOwner() public {
+        assertEq(address(frameSource.owner()), address(this));
+    }
+
+    function testSetFrameFee() public {
+        uint256 commonFrameFee = 100;
+        uint16[] memory chainIds = new uint16[](1);
+        uint256[] memory fees = new uint256[](1);
+        chainIds[0] = targetChain;
+        fees[0] = 200;
+
+        frameSource.setFrameFee(commonFrameFee, chainIds, fees);
+
+        assertEq(frameSource.commonFrameFee(), commonFrameFee);
+        assertEq(frameSource.chainFrameFee(targetChain), fees[0]);
+    }
+
+    function testEstimateFees() public {
+        uint256 commonFrameFee = 100;
+        uint16[] memory chainIds = new uint16[](1);
+        uint256[] memory fees = new uint256[](1);
+        chainIds[0] = targetChain;
+        fees[0] = 200;
+
+        frameSource.setFrameFee(commonFrameFee, chainIds, fees);
+
+        uint256 nativeFee = frameSource.estimateFees(targetChain);
+        uint256 expected = frameSource.quoteCrossChainDeposit(targetChain) + commonFrameFee + fees[0];
+        assertEq(nativeFee, expected);
+    }
+
+    function testSendNativeCrossChainDeposit () public {
         uint256 amount = 19e17;
 
         vm.selectFork(targetFork);
         address recipient = 0x1234567890123456789012345678901234567890;
 
         vm.selectFork(sourceFork);
-        uint256 cost = helloSource.quoteCrossChainDeposit(targetChain);
-
-        address wethAddress = address(tokenBridgeSource.WETH());
+        uint256 cost = frameSource.estimateFees(targetChain);
 
         vm.recordLogs();
-        helloSource.sendNativeCrossChainDeposit{value: cost + amount}(
-            targetChain, address(helloTarget), recipient, amount
+        frameSource.sendNativeCrossChainDeposit{value: cost + amount}(
+            targetChain, address(frameTarget), recipient, amount
         );
         performDelivery();
 
         vm.selectFork(targetFork);
-        address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
+        address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(address(token)));
         assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
-
 
         console.log("cost", cost);
         console.log("amount", amount);
         console.log("targetChain", targetChain);
-        console.log("helloTarget", address(helloTarget));
+        console.log("frameTarget", address(frameTarget));
         console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
-        
 
         console.log("recipient", recipient);
-
     }
+
+    // function testUseWormframe() public {
+    //     uint256 amount = 19e17;
+
+    //     testSetFrameFee();
+
+    //     vm.selectFork(targetFork);
+    //     address recipient = 0x1234567890123456789012345678901234567890;
+
+    //     vm.selectFork(sourceFork);
+    //     uint256 cost = frameSource.estimateFees(targetChain);
+
+    //     address wethAddress = address(tokenBridgeSource.WETH());
+
+    //     vm.recordLogs();
+
+    //     WormFrame.SendInfo[] memory sendInfos = new WormFrame.SendInfo[](1);
+    //     sendInfos[0] = WormFrame.SendInfo({targetChainId: targetChain, amount: amount});
+
+    //     console.log("cost", cost);
+    //     console.log("amount", amount);
+    //     console.log("targetChain", targetChain);
+    //     console.log("helloTarget", address(frameTarget));
+    //     console.log("recipient", recipient);
+
+    //     frameSource.useWormframe{value: cost + amount}(sendInfos, recipient);
+    //     performDelivery();
+
+    //     vm.selectFork(targetFork);
+    //     address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
+    //     assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
+
+    //     console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
+
+
+    // }
+
+    // function testRemoteNativeDeposit() public {
+    //     uint256 amount = 19e17;
+
+    //     vm.selectFork(targetFork);
+    //     address recipient = 0x1234567890123456789012345678901234567890;
+
+    //     vm.selectFork(sourceFork);
+    //     uint256 cost = helloSource.quoteCrossChainDeposit(targetChain);
+
+    //     address wethAddress = address(tokenBridgeSource.WETH());
+
+    //     vm.recordLogs();
+    //     helloSource.sendNativeCrossChainDeposit{value: cost + amount}(
+    //         targetChain, address(helloTarget), recipient, amount
+    //     );
+    //     performDelivery();
+
+    //     vm.selectFork(targetFork);
+    //     address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
+    //     assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
+
+    //     console.log("cost", cost);
+    //     console.log("amount", amount);
+    //     console.log("targetChain", targetChain);
+    //     console.log("helloTarget", address(helloTarget));
+    //     console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
+
+    //     console.log("recipient", recipient);
+
+    // }
 }
