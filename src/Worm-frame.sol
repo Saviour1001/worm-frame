@@ -15,6 +15,39 @@ contract WormFrame is TokenSender, TokenReceiver {
         address _wormhole
     ) TokenBase(_wormholeRelayer, _tokenBridge, _wormhole) {}
 
+    string constant avalanche_testnet_relayer =
+        "0xA3cF45939bD6260bcFe3D66bc73d60f19e49a8BB";
+    string constant celo_testnet_relayer =
+        "0x306B68267Deb7c5DfCDa3619E22E9Ca39C374f84";
+
+    struct SendInfo {
+        uint16 targetChainId;
+        uint256 amount;
+    }
+
+    uint256 commonFrameFee;
+    mapping(uint16 => uint256) chainFrameFee;
+
+    function estimateFees(
+        uint16 targetChainID
+    ) public view returns (uint256 nativeFee) {
+        nativeFee = quoteCrossChainDeposit(targetChainID);
+        nativeFee += chainFrameFee[targetChainID] + commonFrameFee;
+    }
+
+    function setFrameFee(
+        uint256 _commonFrameFee,
+        uint16[] calldata chainIds,
+        uint256[] calldata fees
+    ) external {
+        commonFrameFee = _commonFrameFee;
+        for (uint i = 0; i < chainIds.length; i++) {
+            chainFrameFee[chainIds[i]] = fees[i];
+        }
+    }
+
+    // wormhole internal function
+
     function quoteCrossChainDeposit(
         uint16 targetChain
     ) public view returns (uint256 cost) {
@@ -30,40 +63,12 @@ contract WormFrame is TokenSender, TokenReceiver {
         cost = deliveryCost + wormhole.messageFee();
     }
 
-    function sendCrossChainDeposit(
-        uint16 targetChain,
-        address targetHelloToken,
-        address recipient,
-        uint256 amount,
-        address token
-    ) public payable {
-        uint256 cost = quoteCrossChainDeposit(targetChain);
-        require(
-            msg.value == cost,
-            "msg.value must be quoteCrossChainDeposit(targetChain)"
-        );
-
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
-
-        bytes memory payload = abi.encode(recipient);
-        sendTokenWithPayloadToEvm(
-            targetChain,
-            targetHelloToken, // address (on targetChain) to send token and payload to
-            payload,
-            0, // receiver value
-            GAS_LIMIT,
-            token, // address of IERC20 token contract
-            amount
-        );
-    }
-
     function sendNativeCrossChainDeposit(
         uint16 targetChain,
         address targetHelloToken,
         address recipient,
         uint256 amount
-    ) public payable {
-
+    ) internal {
         console.log("targetChain", targetChain);
         console.log("targetHelloToken", targetHelloToken);
         console.log("recipient", recipient);
