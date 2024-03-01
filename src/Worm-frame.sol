@@ -5,15 +5,17 @@ import "wormhole-solidity-sdk/WormholeRelayerSDK.sol";
 import "wormhole-solidity-sdk/interfaces/IERC20.sol";
 import "wormhole-solidity-sdk/interfaces/IWETH.sol";
 import "forge-std/console.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract WormFrame is TokenSender, TokenReceiver {
+
+contract WormFrame is TokenSender, TokenReceiver, Ownable {
     uint256 constant GAS_LIMIT = 250_000;
 
     constructor(
         address _wormholeRelayer,
         address _tokenBridge,
         address _wormhole
-    ) TokenBase(_wormholeRelayer, _tokenBridge, _wormhole) {}
+    ) TokenBase(_wormholeRelayer, _tokenBridge, _wormhole) Ownable() {}
 
     string constant avalanche_testnet_relayer =
         "0xA3cF45939bD6260bcFe3D66bc73d60f19e49a8BB";
@@ -39,7 +41,7 @@ contract WormFrame is TokenSender, TokenReceiver {
         uint256 _commonFrameFee,
         uint16[] calldata chainIds,
         uint256[] calldata fees
-    ) external {
+    ) external onlyOwner{
         commonFrameFee = _commonFrameFee;
         for (uint i = 0; i < chainIds.length; i++) {
             chainFrameFee[chainIds[i]] = fees[i];
