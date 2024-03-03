@@ -41,13 +41,26 @@ contract WormFrame is TokenSender, TokenReceiver, Ownable {
         }
     }
 
-    function useWormframe(SendInfo[] calldata sendInfos, address receiver) public payable {
+    function useWormframe(SendInfo[] calldata sendInfos, address receiver, address targetToken) public payable {
         uint256 totalFee;
+        uint256 totalAmount; 
+
         for (uint256 i = 0; i < sendInfos.length; i++) {
-            totalFee +=
-                sendNativeCrossChainDeposit(sendInfos[i].targetChainId, address(this), receiver, sendInfos[i].amount);
+            SendInfo calldata sendInfo = sendInfos[i];
+            totalFee += estimateFees(sendInfo.targetChainId);
+            totalAmount += sendInfo.amount;
         }
-        require(msg.value >= totalFee, "Insufficient fee");
+
+        console.log("totalFee from the contract", totalFee);  
+        console.log("totalAmount from the contract", totalAmount);
+
+        require(msg.value == totalFee + totalAmount, "msg.value must be totalFee + totalAmount");
+
+        for (uint256 i = 0; i < sendInfos.length; i++) {
+            SendInfo calldata sendInfo = sendInfos[i];
+            sendNativeCrossChainDeposit(sendInfo.targetChainId, targetToken , receiver, sendInfo.amount);
+        }
+
     }
 
     // wormhole internal functions

@@ -76,54 +76,43 @@ contract WormFrameTest is WormholeRelayerBasicTest {
         address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
         assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
 
-
-        console.log("cost", cost);
-        console.log("amount", amount);
-        console.log("targetChain", targetChain);
-        console.log("helloTarget", address(frameTarget));
-        console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
-        
-
-        console.log("recipient", recipient);
-
     }
 
 
-    // function testUseWormframe() public {
-    //     uint256 amount = 19e17;
+    function testUseWormframe() public {
 
-    //     testSetFrameFee();
+        testSetFrameFee();
+        uint256 amount = 19e17;
 
-    //     vm.selectFork(targetFork);
-    //     address recipient = 0x1234567890123456789012345678901234567890;
+        vm.selectFork(targetFork);
+        address recipient = 0x1234567890123456789012345678901234567890;
 
-    //     vm.selectFork(sourceFork);
-    //     uint256 cost = frameSource.estimateFees(targetChain);
+        vm.selectFork(sourceFork);
+        uint256 cost = frameSource.estimateFees(targetChain);
 
-    //     address wethAddress = address(tokenBridgeSource.WETH());
+        console.log("cost", cost);
 
-    //     vm.recordLogs();
+        address wethAddress = address(tokenBridgeSource.WETH());
 
-    //     WormFrame.SendInfo[] memory sendInfos = new WormFrame.SendInfo[](1);
-    //     sendInfos[0] = WormFrame.SendInfo({targetChainId: targetChain, amount: amount});
+        vm.recordLogs();
+        
+        WormFrame.SendInfo[] memory sendInfos = new WormFrame.SendInfo[](1);
+        sendInfos[0] = WormFrame.SendInfo({
+            targetChainId: targetChain,
+            amount: amount
+        });
 
-    //     console.log("cost", cost);
-    //     console.log("amount", amount);
-    //     console.log("targetChain", targetChain);
-    //     console.log("helloTarget", address(frameTarget));
-    //     console.log("recipient", recipient);
+        frameSource.useWormframe{value: cost + amount}(sendInfos, recipient, address(frameTarget));
 
-    //     frameSource.useWormframe{value: cost + amount}(sendInfos, recipient);
-    //     performDelivery();
+        performDelivery();
 
-    //     vm.selectFork(targetFork);
-    //     address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
-    //     assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
-
-    //     console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
+        vm.selectFork(targetFork);
+        address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
+        assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
 
 
-    // }
+
+    }
 
     // function testRemoteNativeDeposit() public {
     //     uint256 amount = 19e17;
