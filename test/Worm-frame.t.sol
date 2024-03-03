@@ -55,7 +55,7 @@ contract WormFrameTest is WormholeRelayerBasicTest {
         assertEq(nativeFee, expected);
     }
 
-    function testSendNativeCrossChainDeposit () public {
+    function testRemoteNativeDeposit() public {
         uint256 amount = 19e17;
 
         vm.selectFork(targetFork);
@@ -64,6 +64,8 @@ contract WormFrameTest is WormholeRelayerBasicTest {
         vm.selectFork(sourceFork);
         uint256 cost = frameSource.estimateFees(targetChain);
 
+        address wethAddress = address(tokenBridgeSource.WETH());
+
         vm.recordLogs();
         frameSource.sendNativeCrossChainDeposit{value: cost + amount}(
             targetChain, address(frameTarget), recipient, amount
@@ -71,17 +73,21 @@ contract WormFrameTest is WormholeRelayerBasicTest {
         performDelivery();
 
         vm.selectFork(targetFork);
-        address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(address(token)));
+        address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
         assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
+
 
         console.log("cost", cost);
         console.log("amount", amount);
         console.log("targetChain", targetChain);
-        console.log("frameTarget", address(frameTarget));
+        console.log("helloTarget", address(frameTarget));
         console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
+        
 
         console.log("recipient", recipient);
+
     }
+
 
     // function testUseWormframe() public {
     //     uint256 amount = 19e17;
