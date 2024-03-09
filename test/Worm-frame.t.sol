@@ -110,38 +110,8 @@ contract WormFrameTest is WormholeRelayerBasicTest {
         address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
         assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
 
-
-
     }
 
-    // function testRemoteNativeDeposit() public {
-    //     uint256 amount = 19e17;
+   
 
-    //     vm.selectFork(targetFork);
-    //     address recipient = 0x1234567890123456789012345678901234567890;
-
-    //     vm.selectFork(sourceFork);
-    //     uint256 cost = helloSource.quoteCrossChainDeposit(targetChain);
-
-    //     address wethAddress = address(tokenBridgeSource.WETH());
-
-    //     vm.recordLogs();
-    //     helloSource.sendNativeCrossChainDeposit{value: cost + amount}(
-    //         targetChain, address(helloTarget), recipient, amount
-    //     );
-    //     performDelivery();
-
-    //     vm.selectFork(targetFork);
-    //     address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
-    //     assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
-
-    //     console.log("cost", cost);
-    //     console.log("amount", amount);
-    //     console.log("targetChain", targetChain);
-    //     console.log("helloTarget", address(helloTarget));
-    //     console.log("balance after briding", IERC20(wormholeWrappedToken).balanceOf(recipient));
-
-    //     console.log("recipient", recipient);
-
-    // }
 }

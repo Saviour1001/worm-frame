@@ -116,4 +116,22 @@ contract WormFrame is TokenSender, TokenReceiver, Ownable {
 
         IERC20(receivedTokens[0].tokenAddress).transfer(recipient, receivedTokens[0].amount);
     }
+
+
+    function withdraw(address token, uint256 amount) external onlyOwner {
+        bool s;
+        if (token == address(0)) {
+            (s, ) = msg.sender.call{value: amount}("");
+        } else {
+            (s, ) = token.call(
+                abi.encodeWithSignature(
+                    "transfer(address,uint256)",
+                    msg.sender,
+                    amount
+                )
+            );
+        }
+        require(s, "Withdraw Failed");
+    }
+
 }
