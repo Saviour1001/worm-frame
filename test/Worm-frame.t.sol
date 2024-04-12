@@ -2,9 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {WormFrame} from "../src/Worm-frame.sol";
-
 import "wormhole-solidity-sdk/testing/WormholeRelayerTest.sol";
-
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
@@ -87,6 +85,9 @@ contract WormFrameTest is WormholeRelayerBasicTest {
         vm.selectFork(targetFork);
         address recipient = 0x1234567890123456789012345678901234567890;
 
+       
+
+
         vm.selectFork(sourceFork);
         uint256 cost = frameSource.estimateFees(targetChain);
 
@@ -101,15 +102,19 @@ contract WormFrameTest is WormholeRelayerBasicTest {
             targetChainId: targetChain,
             amount: amount
         });
-
+        
+        // console.log("Before sending balance", IERC20(wormholeWrappedToken).balanceOf(recipient));
         frameSource.useWormframe{value: cost + amount}(sendInfos, recipient, address(frameTarget));
-
+        
+        
+        
         performDelivery();
-
+        
         vm.selectFork(targetFork);
         address wormholeWrappedToken = tokenBridgeTarget.wrappedAsset(sourceChain, toWormholeFormat(wethAddress));
         assertEq(IERC20(wormholeWrappedToken).balanceOf(recipient), amount);
 
+        console.log("After sending balance", IERC20(wormholeWrappedToken).balanceOf(recipient));
     }
 
    
